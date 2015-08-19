@@ -1,7 +1,9 @@
 module ogol::Syntax
 
 import ParseTree;
-
+import vis::ParseTree;
+import vis::Render;
+import vis::Figure;
 /*
 
 Ogol syntax summary
@@ -65,54 +67,57 @@ keyword Reserved =  "if"
 	| "false"
 	| "end";
 
-syntax FunDef = FunId Expr+";" 
-	| "to" FunId Variable+ Command* "end"
-	;
+syntax FunDef = "to" FunId id Variable+ Command* "end";
 
-syntax Variables = Variable | 
-	| Numbers 
-	| Booleans
-	;
-	
-syntax Operation =	Arithmatic
-	| Comparison
-	| Logical
-	;
-syntax Expr = Variables Operation Variables
-	| Variables
-	;
+syntax Expr 
+   = Boolean
+   | Number
+   | VarId
+   > left   div: Expr "/" Expr 
+   > left   mul: Expr "*" Expr
+   > left ( add: Expr "+" Expr 
+   		  | sub: Expr "-" Expr
+   		  )
+   > left ( gt:  Expr "\>"  Expr
+          | st:  Expr "\<"  Expr
+          | gte: Expr "\>=" Expr
+          | ste: Expr "\<=" Expr
+          | eq:  Expr "="  Expr
+          | neq: Expr "!=" Expr
+          )    
+   | left ( and: Expr "&&" Expr
+          | or:  Expr "||" Expr
+          )
+   ;
 
 syntax Command = "if" Expr Block
 	| "ifelse" Expr Block Block
 	| "while" Expr Block
 	| "repeat" Expr Block
-	| DrawCommand
+	| DrawingCommand
 	| FunDef
+	| FunId Expr+";" 
 	;
 	
-syntax DrawCommand = "forward" Expr";" 
-	|"fd" Expr";" 
-	|"back" Expr";" 
-	|"bk" Expr";" 
+syntax DrawingCommand = "forward" Expr";" 
+	|"fd" Expr ";" 
+	|"back" Expr ";" 
+	|"bk" Expr ";" 
 	|"home;"
-	|"right" Expr";" 
-	|"rt" Expr";" 
-	|"left" Expr";" 
-	|"lt" Expr";" 
+	|"right" Expr ";" 
+	|"rt" Expr ";" 
+	|"left" Expr ";" 
+	|"lt" Expr ";" 
 	|"pendown;" 
 	|"pd;"
 	|"penup;"
 	|"pu;" 	
 	;
 	
-syntax Block = "["  Command+  "]";
+syntax Block = "["  Command*  "]";
 
-lexical Variable = VarId;
-lexical Numbers = "-"?[0-9]*"."?[0-9]*;
-lexical Booleans = "true" | "false";
-lexical Arithmatic = "+" | "-" | "*" | "/";
-lexical Comparison = "\<" |"\>" |"\<=" |"\>=" | "=" | "!=";
-lexical Logical =  "&&" | "||";
+lexical Number = "-"? ([0-9]* ".")? [0-9]+ !>> [0-9];
+lexical Boolean = "true" | "false";
 
 lexical VarId
   = ":" [a-zA-Z][a-zA-Z0-9]* \ Reserved !>> [a-zA-Z0-9]; // added difference reserved
@@ -137,46 +142,44 @@ lexical Comment
   = @category="Comment" "--" ![\n\r]* [\r][\n]
   ;
   
-  /* Tests  */
+/* Tests  */
   
-  
-	bool canparse(cls, str s){
-		try {
-  		parse(cls, s);
-  		return true;
-  	}
+bool canparse(cls, str s){
+	try {
+		parse(cls, s);
+		return true;
+	}
   	catch:
   		return false;
-	}
+}
 	
-
+bool canparsetree(cls, str s){
+	try {
+		vis::ParseTree::renderParsetree(parse(cls, s));
+		return true;
+	} catch:
+		return false;
+}
 
 
   /* num test*/
-  test bool n0() = false := canparse(#Numbers, ""); 
-  test bool n1() = true := canparse(#Numbers, ".7"); 
-  test bool n2() = true := canparse(#Numbers, "-1.0"); 
+  test bool n0() = false := canparse(#Number, ""); 
+  test bool n1() = true := canparse(#Number, ".7"); 
+  test bool n2() = true := canparse(#Number, "-1.0"); 
   
   
   /* Variable test */
-  test bool t0() = true := canparse(#Variables,""); 
-  test bool t1() = true := canparse(#Variables,":v"); 
-  test bool t2() = true := canparse(#Variables,":variable"); 
-  test bool t3() = true := canparse(#Variables,"-0"); 
-  test bool t8() = true := canparse(#Variables,"199"); 
-  test bool t9() = true := canparse(#Variables,"-0.2"); 
-  test bool t10() = true := canparse(#Variables,"2000000"); 
-  test bool t11() = true := canparse(#Variables,"false"); 
-  test bool t12() = true := canparse(#Variables,"0.8");  
-  test bool t13() = true := canparse(#Variables,"-1");  
+  test bool t0() = false := canparse(#VarId,""); 
+  test bool t1() = true := canparse(#VarId,":v"); 
+  test bool t2() = true := canparse(#VarId,":variable"); 
+  test bool t3() = true := canparse(#Number,"-0"); 
+  test bool t8() = true := canparse(#Number,"199"); 
+  test bool t9() = true := canparse(#Number,"-0.2"); 
+  test bool t10() = true := canparse(#Number,"2000000"); 
+  test bool t11() = true := canparse(#Boolean,"false"); 
+  test bool t12() = true := canparse(#Number,"0.8");  
+  test bool t13() = true := canparse(#Number,"-1");  
   
-  /* operation test */
-  test bool t4() = true := canparse(#Operation,"\<"); 
-  test bool t5() = true := canparse(#Operation,"\>"); 
-  test bool t6() = true := canparse(#Operation,"\>="); 
-  test bool t7() = true := canparse(#Operation,"\<="); 
-  test bool t13() = true := canparse(#Operation,"||"); 
-  test bool t14() = true := canparse(#Operation,"&&"); 
   /* expression test */
   test bool expr() = true := canparse(#Expr,"true + false");
   test bool expr0() = true := canparse(#Expr,"true");
@@ -188,7 +191,7 @@ lexical Comment
   test bool expr6() = true := canparse(#Expr,":var");
   
   // assert false
-  test bool cmd() = false := canparse(#Command,"if true + false []");
+  test bool cmd() = true := canparse(#Command,"if true + false []");
   test bool cmd0() = false := canparse(#Command,"repeat 36");
   test bool cmd4() = false := canparse(#Command,"if -1 + 1");
   test bool cmd7() = false := canparse(#Command,"");
@@ -197,6 +200,7 @@ lexical Comment
   test bool cmd2() = true := canparse(#Command,"fd 50;");
   test bool cmd3() = true := canparse(#Command,"if true + false [fd 20; rt 200;]");
   test bool cmd5() = true := canparse(#Command,"home;");
+  test bool cmd5() = false := canparse(#Command,"home");
   test bool cmd7() = true := canparse(#Command,"if 1 + 1 [fd 40;]");
   test bool cmd8() = true := canparse(#Command,"if 1 + 1 [fd 40; fd 50;]");
   
@@ -211,21 +215,11 @@ lexical Comment
   test bool block01() = true := canparse(#Block,"[squareDash :n;]");  
   
               
-   /* test functions*/    
-  test bool func1() = true := canparse(#FunDef,"squareDashTwirl 0;");  
-  test bool func9() = true := canparse(#FunDef,"squareDash :n :n;");
-  
-  test bool func7() = true := canparse(#FunDef,"to fillpoly :a :b :c :d fd 50; end");
-  test bool func8() = true := canparse(#FunDef,"to dash :n :len repeat :n [ pd; fd :len; pu; fd :len; ] bk :len; pd; end");   
-  
-  test bool func5() = true := canparse(#FunDef,"home;"); // double V T F
-
-   
-   
-              
-  test bool func5() = true := canparse(#FunDef,"to tree :size  if :size \>= 5 [  	fd :size;  	lt 30; tree :size * 0.7;  	rt 60; tree :size * 0.7;  	lt 30; bk :size; ] end"); 
-  test bool cmd_20() = true := canparse(#FunDef," if :size \>= 5 [  	fd :size;  	lt 30; tree :size*0.7;  	rt 60; tree :size*0.7;  	lt 30; bk :size; ]");       // todo     
- test bool func7() = true := canparse(#FunDef,"tree :size * 0.7;");
  
+ /* draw trees */
+ // test bool draw() = true := canparsetree(#Command,"if 1 + 1 [fd 40; fd 50;]");
+ // test bool func10() = true := canparsetree(#Expr,"true + false"); 
+ 
+  
   
   
