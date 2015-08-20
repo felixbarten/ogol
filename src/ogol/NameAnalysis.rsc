@@ -10,11 +10,9 @@ alias Uses = rel[str varName, loc src, str scopeName, int varPos];
 Uses main(list[value] args){
  Program p = parse(#start[Program], |project://Ogol/input/dashed_nested.ogol|).top;
  println(p);
-  
-  
+ 
  return varsUsedInCommands("global", p.commands, []);
 }
-
 
 
 Uses varsUsedInCommands(str scopeName, Command* commands, Definitions defs) =
