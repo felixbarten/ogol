@@ -3,6 +3,7 @@ module ogol::Eval
 // imports
 import ogol::Syntax;
 import ogol::Canvas;
+import util::Math;
 import ParseTree;
 import String;
 import IO;
@@ -97,7 +98,7 @@ State evalCommand((Command)`forward <Expr* e>;`, FunEnv fenv, VarEnv venv, State
 }
 // back, bvk
 State evalCommand((Command)`back <Expr* e>;`, FunEnv fenv, VarEnv venv, State state) {
-
+	
 	return state;
 }
 // left, lt
@@ -146,27 +147,6 @@ default Value eval(Expr e, FunEnv _, VarEnv _) {
   throw "Cannot eval: <e>";
 }
 
-/*
-Value eval(Expr e, FunEnv fenv, VarEnv venv) {
-	switch(e) {
-		case variable(str name):{
-			return venv[name];
-		}
-		case boolean(bool b): {
-			return b;
-		
-		}
-		case number(number n): { 
-			return number(n);
-		
-		}
-		case mul(Exp lhs, Expr rhz): 
-			return eval(lhs, fenv, venv) * eval(rhs, fenv, venv);
-		
-	}
-}
-*/
-
 FunEnv fenv = ();
 VarEnv venv = ();
 
@@ -187,6 +167,7 @@ test bool testTrue()
   
   
 test bool testBool() = eval((Expr)`true`, (),()) == boolean(true);
+
 
 test bool testNum() = eval((Expr)`2.0`, (),()) == number(2.0);
 
