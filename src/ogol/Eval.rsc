@@ -46,7 +46,7 @@ Canvas eval((Program)`<Command* cmds>`) {
 	state = <<0, false, <0,0>>, []>;
 	
 	for (c <- cmds) {
-									st	ate = evalCommand(c, funenv, varEnv, state);
+		state = evalCommand(c, funenv, varEnv, state);
 	}
 	return state.Canvas;
 }
@@ -176,7 +176,7 @@ Value eval((Expr)`true`, FunEnv fenv, VarEnv env)
 Value eval((Expr)`false`, FunEnv fenv, VarEnv env) 
   = boolean(false);
   
-Value eval((Expr)`<Num n>`, FunEnv fenv, VarEnv env)  = number(toReal(unparse(n)));
+Value eval((Expr)`<Number n>`, FunEnv fenv, VarEnv env)  = number(toReal(unparse(n)));
   
 Value eval((Expr)`<VarId x>`, FunEnv fenv, VarEnv env)
   = env[x];
