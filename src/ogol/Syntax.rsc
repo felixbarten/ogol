@@ -69,6 +69,7 @@ keyword Reserved =  "if"
 
 
 syntax FunDef = "to" FunId id VarId* Command* "end";
+syntax FunCall = FunId id Expr* ";" ;
 
 syntax Expr 
    = Boolean
@@ -97,9 +98,9 @@ syntax Command = "if" Expr Block
 	| "repeat" Expr Block
 	| DrawingCommand
 	| FunDef
-	| FunId Expr+";" 
+	| FunCall
 	;
-	
+
 syntax DrawingCommand = "forward" Expr ";" 
 	|"fd" Expr ";" 
 	|"back" Expr ";" 
@@ -226,6 +227,8 @@ bool canparsetree2(cls, str s){
    /* test functions*/    
   test bool func1() = true := canparse(#Command,"squareDashTwirl 0;");  
   test bool func9() = true := canparse(#Command,"squareDash :n :n;");
+  test bool func9() = true := canparse(#Command,"repeat :n [ pd; fd :len; pu; fd :len; ]");
+  
   test bool func7() = true := canparse(#FunDef,"to fillpoly :a :b :c :d fd 50; end");
   test bool func8() = true := canparse(#Command,"to dash :n :len repeat :n [ pd; fd :len; pu; fd :len; ] bk :len; pd; end"); 
   test bool func5() = true := canparse(#DrawingCommand,"home;"); // double V T F
@@ -234,8 +237,8 @@ bool canparsetree2(cls, str s){
  // test bool draw() = true := canparsetree(#Command,"if 1 + 1 [fd 40; fd 50;]");
  // test bool func10() = true := canparsetree(#Expr,"true + false"); 
  
-    test bool draw() = true := canparsetree2(#Command,"if 1 + 1 [fd 40; fd 50;]");
-  test bool func10() = true := canparsetree2(#Expr,"true + false"); 
+ //   test bool draw() = true := canparsetree2(#Command,"if 1 + 1 [fd 40; fd 50;]");
+ // test bool func10() = true := canparsetree2(#Expr,"true + false"); 
  
   
   

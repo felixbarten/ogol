@@ -5,37 +5,58 @@ import ogol::NameAnalysis;
 import ParseTree;
 import IO;
 
+alias FunEnv = map[FunId id, FunDef def];
 alias CallHistory = lrel[str callName, str scopeName, int cmdPos];
-
-
 alias Calls = rel[str callerCmdName, str calleeCmdName, loc src, str scopeName, int varPos, int cmdPos];
+alias FunCommands = rel[str callerFunc, list[Calls] calls];
 
+
+FunEnv collectFunDefs(Program p)
+ = (f.id : f | /FunDef f := p);
+ 
+FunCommands collectFuncCmds(Program p) {
+ 	FunEnv funcs = (f.id : f | /FunDef f := p);
+ 	FunCommands fcmds;
+ 	for (f <- funcs){
+ 		for (/Command* c := f){
+ 		fmcds += cmdsCalledInCommands("", 
+ 	}
+ 	
+ 	return rel[
+}
 
 Calls main(list[value] args){
 	 Program p = parse(#start[Program], |project://Ogol/input/dashed_nested.ogol|).top;
 	 println(p);
+	
+	FunCommands fenv = collectFuncCmds(p);
 	 
 	 return cmdsCalledInCommands("global", p.commands, []);
 }
 
 Calls cmdsCalledInCommands(str scopeName, Command* commands, CallHistory ch) =
- { *cmdsCalledInCommand(scopeName, cmd, ch) | cmd <- commands };
+ { *cmdsCalledInCommandType(scopeName, cmd, ch) | cmd <- commands };
 
 
 
 Calls cmdsCalledInCommandType(str scopeName,
-(Command) `<Command* commands>`,
+(Command) `<Command cmd>`,
 CallHistory defs)
 {
- if (/FunCall f := commands) {
+ println("Checking command type!" + cmd);
+
+ if (/FunCall f := cmd) {
  	// if function
- 	return cmdsCalledInFunction(scopeName, commands, defs);
- } else if (/FunDef f := commands) {
+ 	println("Its A function call!");
+ 	return cmdsCalledInFunctionCall(scopeName, f, defs);
+ } else if (/FunDef f := cmd) {
  	// function definition
-	return cmdsCalledInFunction(scopeName, commands, defs);
+ 	 	println("Its A function definition!");
+	return cmdsCalledInFunctionDef(scopeName, cmd, defs);
  } else {
  	// command
- 	return cmdsCalledInCommand(scopeName, commands, defs);
+ 	 	println("Its A Command!");
+ 	return cmdsCalledInCommand(scopeName, cmd, defs);
  }
 }
 
@@ -53,8 +74,33 @@ CallHistory defs)
 }
 
 
-Calls cmdsCalledInFunction(str scopeName, (FunDef) `<FunId fid> <Expr* e> <Commands* commands>`, CallHistory ch){
+Calls cmdsCalledInFunctionDef(str scopeName, (FunDef) `to" <FunId id> <VarId* vars> <Command* commands> end`, CallHistory ch){
+
+	
+	if (size(commands) > 0) {
+		calls = cmdsCalledInCommands(scopeName, commands, ch);
+		println(calls);
+	}
 
 
-	return cmdsCalledInCommands(scopeName, commands, cs);
+
+	return cmdsCalledInCommands(scopeName, commands, ch);
 }
+
+Calls cmdsCalledInFunctionCall(str scopeName, (FunCall) `<FunId fid> <Expr* e>;`, CallHistory ch){
+
+
+
+	return cmdsCalledInCommands(scopeName, cmd, ch);
+}
+
+/*
+rel[str, list[Calls]] cmdsInFunctionDef(str name, (FunDef) `to" <FunId id> <VarId* vars> <Command* commands> end`){
+
+	// list[Calls] = cmdsCalledInCommands("",commands, "");
+
+
+	return rel[id, calls];
+}
+
+*/
